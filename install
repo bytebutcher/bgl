@@ -1,0 +1,50 @@
+#!/bin/bash
+if ! [ -d ~/.bgl/ ] ; then
+	git clone https://github.com/bytebutcher/bgl ~/.bgl/
+fi
+
+if ! [ -f ~/.bgl/bgl.py ] ; then
+	echo "ERROR: Installation of bgl failed!" >&2
+	exit 1
+fi
+
+cat <<EOF > ~/.bgl.bash
+function bgl-export() {
+	export \${@}
+	~/.bgl/bgl.py --export \${@}
+}
+
+function bgl-unset() {
+	unset \${@}
+	~/.bgl/bgl.py --unset \${@}
+}
+
+function bgl-reload() {
+	while read name_value; do
+		export \${name_value}
+	done< <(~/.bgl/bgl.py --exports)
+}
+
+function bgl-exports() {
+	while read name_value; do
+		echo "export \${name_value}"
+	done< <(~/.bgl/bgl.py --exports)
+}
+
+bgl-reload
+EOF
+
+if ! [ -f ~/.bgl.bash ] ; then
+	echo "ERROR: Installation of bgl failed!" >&2
+	exit 1
+fi
+
+result="$(grep "[ -f ~/.bgl.bash ] && source ~/.bgl.bash" ~/.bashrc)"
+if [ -z "${result}" ]  ; then
+	echo "[ -f ~/.bgl.bash ] && source ~/.bgl.bash" >> ~/.bashrc
+fi
+
+echo "Finished. Restart your shell or reload config file."
+[[ "$shells" =~ bash ]] && echo "   source ~/.bashrc  # bash"
+#[[ "$shells" =~ zsh ]]  && echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
+#[[ "$shells" =~ fish ]] && [ $key_bindings -eq 1 ] && echo "   fzf_key_bindings  # fish"
