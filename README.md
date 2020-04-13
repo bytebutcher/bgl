@@ -41,6 +41,6 @@ export name1=value1
 
 ## Installation
 ```
-bash <(curl -s https://github.com/bytebutcher/bgl/install)
+bash <(curl -s https://raw.githubusercontent.com/bytebutcher/bgl/master/install)
 ```
 
