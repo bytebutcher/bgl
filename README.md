@@ -2,6 +2,11 @@
 
 bgl - make bash environment variables accessible between multiple terminals
 
+## Setup
+```
+bash <(curl -s https://raw.githubusercontent.com/bytebutcher/bgl/master/install)
+```
+
 ## Usage
 
 ```
@@ -37,10 +42,5 @@ To distribute managed exports between computers you can use the result of the ``
 ```
 $ bgl list
 export name1=value1
-```
-
-## Installation
-```
-bash <(curl -s https://raw.githubusercontent.com/bytebutcher/bgl/master/install)
 ```
 
