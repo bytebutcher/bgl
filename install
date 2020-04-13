@@ -1,6 +1,8 @@
 #!/bin/bash
 if ! [ -d ~/.bgl/ ] ; then
 	git clone https://github.com/bytebutcher/bgl ~/.bgl/
+else
+	git pull ~/.bgl/
 fi
 
 if ! [ -f ~/.bgl/bgl.py ] ; then
@@ -9,14 +11,26 @@ if ! [ -f ~/.bgl/bgl.py ] ; then
 fi
 
 cat <<EOF > ~/.bgl.bash
+function bgl-usage() {
+	echo "bgl: bgl [option] [name=value]"                    >&2
+	echo "    manage global shell variables"                 >&2
+	echo ""                                                  >&2
+	echo "    Options:"                                      >&2
+	echo "      export <name=value>   export shell variable" >&2
+	echo "      list                  list exports"          >&2
+	echo "      unset  <name>         unset export"          >&2
+	echo "      reload                reload exports"        >&2
+	echo "      help                  display this help"     >&2
+}
+
 function bgl-export() {
 	export \${@}
-	~/.bgl/bgl.py --export \${@}
+	[[ $? -eq 0 ]] && ~/.bgl/bgl.py --export \${@}
 }
 
 function bgl-unset() {
 	unset \${@}
-	~/.bgl/bgl.py --unset \${@}
+	[[ $? -eq 0 ]] && ~/.bgl/bgl.py --unset \${@}
 }
 
 function bgl-reload() {
@@ -29,6 +43,37 @@ function bgl-exports() {
 	while read name_value; do
 		echo "export \${name_value}"
 	done< <(~/.bgl/bgl.py --exports)
+}
+
+function bgl() {
+	case \$1 in
+		export | -e | --export )		   
+			shift
+			bgl-export \$@
+			;;
+		exports |-l | --list-exports )
+			shift
+			bgl-exports \$@
+			;;
+		reload | -r | --reload )
+			shift
+			bgl-reload \$@
+			;;
+		unset | -u | --unset )
+			shift
+			bgl-unset \$@
+			;;
+		help | -? | -h | --help )
+ 			bgl-usage
+			;;
+		* )
+			if [[ -n \$1 ]] ; then
+				bgl-export \$@
+			else
+				bgl-usage
+			fi
+			;;
+	esac
 }
 
 bgl-reload
