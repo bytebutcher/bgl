@@ -2,7 +2,7 @@
 if ! [ -d ~/.bgl/ ] ; then
 	git clone https://github.com/bytebutcher/bgl ~/.bgl/
 else
-	git pull ~/.bgl/
+	(cd ~/.bgl/ && git pull)
 fi
 
 if ! [ -f ~/.bgl/bgl.py ] ; then
