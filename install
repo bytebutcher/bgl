@@ -5,73 +5,117 @@ else
 	(cd ~/.bgl/ && git pull)
 fi
 
-if ! [ -f ~/.bgl/bgl.py ] ; then
-	echo "ERROR: Installation of bgl failed!" >&2
-	exit 1
-fi
-
 cat <<EOF > ~/.bgl.bash
 function bgl-usage() {
-	echo "bgl: bgl [option] [name=value]"                    >&2
+	echo "bgl: bgl [option]"                                 >&2
 	echo "    manage global shell variables"                 >&2
 	echo ""                                                  >&2
 	echo "    Options:"                                      >&2
-	echo "      export <name=value>   export shell variable" >&2
+	echo "      <name=value ...>      export shell variable" >&2
 	echo "      list                  list exports"          >&2
-	echo "      unset  <name>         unset export"          >&2
+	echo "      unset <name ...>      unset export"          >&2
 	echo "      reload                reload exports"        >&2
+	echo "      clear                 clear exports"         >&2
 	echo "      help                  display this help"     >&2
 }
 
+function bgl-check-number-of-arguments() {
+	number=\$1; shift
+	[[ \$# -eq \${number} ]]
+}
+
 function bgl-export() {
+	if ! bgl-check-number-of-arguments 1 \${@} ; then
+		echo "ERROR: Too many arguments!"
+		return 1	
+	fi
+	if [[ "\${arg}" != *"="* ]] ; then
+		echo "ERROR: Invalid argument!"
+		return 1
+	fi
 	export \${@}
-	[[ $? -eq 0 ]] && ~/.bgl/bgl.py --export \${@}
+	if [[ \$? -eq 0 ]] ; then
+		name=\$(echo "\${@}" | cut -d'=' -f1)
+		bgl-unset "\$name"
+		[[ \$? -eq 0 ]] && echo "\${@}" >> ~/.bgl/storage
+	fi
 }
 
 function bgl-unset() {
+	if ! bgl-check-number-of-arguments 1 \${@} ; then
+		echo "ERROR: Too many arguments!"
+		return 1	
+	fi
 	unset \${@}
-	[[ $? -eq 0 ]] && ~/.bgl/bgl.py --unset \${@}
+	[[ \$? -eq 0 ]] && [ -f ~/.bgl/storage ] && sed -i "/^\${@}=/d" ~/.bgl/storage
 }
 
 function bgl-reload() {
-	while read name_value; do
-		export \${name_value}
-	done< <(~/.bgl/bgl.py --exports)
+	if [ -f ~/.bgl/storage ] ; then
+		while read name_value; do
+			export \${name_value}
+		done <~/.bgl/storage 
+	fi
 }
 
-function bgl-exports() {
-	while read name_value; do
-		echo "export \${name_value}"
-	done< <(~/.bgl/bgl.py --exports)
+function bgl-list() {
+	if [ -f ~/.bgl/storage ] ; then
+		while read name_value; do
+			echo "export \${name_value}"
+		done <~/.bgl/storage
+	fi
+}
+
+function bgl-clear() {
+	if [ -f ~/.bgl/storage ] ; then
+		> ~/.bgl/storage
+	fi
 }
 
 function bgl() {
 	case \$1 in
 		export | -e | --export )		   
 			shift
-			bgl-export \$@
+			for arg in "\${@}"; do	
+				bgl-export "\${arg}"
+			done
 			;;
-		exports |-l | --list-exports )
-			shift
-			bgl-exports \$@
+		list |-l | --list )
+			bgl-list
 			;;
 		reload | -r | --reload )
-			shift
-			bgl-reload \$@
+			bgl-reload
 			;;
 		unset | -u | --unset )
 			shift
-			bgl-unset \$@
+			for arg in "\${@}"; do	
+				bgl-unset "\${arg}"
+			done
+			;;
+		clear | -c | --clear )
+			bgl-clear
 			;;
 		help | -? | -h | --help )
  			bgl-usage
 			;;
 		* )
-			if [[ -n \$1 ]] ; then
-				bgl-export \$@
-			else
+			if [[ \${#} -eq 0 ]] ; then
 				bgl-usage
+				return 1
 			fi
+
+			for arg in "\${@}"; do	
+				if [[ "\${arg}" != *"="* ]] ; then
+					bgl-usage
+					echo ""
+					echo "ERROR: Invalid argument!"
+					return 1
+				fi
+			done
+
+			for arg in "\${@}"; do	
+				bgl-export "\${arg}"
+			done
 			;;
 	esac
 }
@@ -93,3 +137,4 @@ echo "Finished. Restart your shell or reload config file."
 [[ "$shells" =~ bash ]] && echo "   source ~/.bashrc  # bash"
 #[[ "$shells" =~ zsh ]]  && echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
 #[[ "$shells" =~ fish ]] && [ $key_bindings -eq 1 ] && echo "   fzf_key_bindings  # fish"
+exit 0
