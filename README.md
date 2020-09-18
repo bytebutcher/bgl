@@ -1,6 +1,6 @@
-# bgl
+# bgl 🥯
 
-bgl - make bash environment variables accessible between multiple terminals
+Make bash environment variables accessible between multiple terminals
 
 ## Setup
 ```
